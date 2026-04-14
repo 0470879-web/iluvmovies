@@ -1,0 +1,2306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Geolocation Map | Kriptic Edition 3.0</title>
+    <meta name="description" content="Real-time visitor geolocation tracking and visualization">
+    
+    <!-- 
+    ╔═══════════════════════════════════════════════════════════════════════╗
+    ║                    LEAFLET PLUGINS LOADED VIA CDN                     ║
+    ╠═══════════════════════════════════════════════════════════════════════╣
+    ║ ✅ Leaflet Core (1.9.4)                                               ║
+    ║    - Main mapping library                                             ║
+    ║    - Provides map, markers, popups, layers                            ║
+    ║                                                                        ║
+    ║ ✅ Leaflet MarkerCluster (1.5.3)                                      ║
+    ║    - Groups nearby markers into clusters                              ║
+    ║    - Improves performance with many markers                           ║
+    ║    - Auto-expands on zoom                                             ║
+    ║                                                                        ║
+    ║ ✅ Leaflet Heatmap (0.2.0)                                            ║
+    ║    - Creates heat density visualization                               ║
+    ║    - Shows visitor concentration areas                                ║
+    ║    - Custom gradient colors                                           ║
+    ║                                                                        ║
+    ║ All plugins load automatically from CDN - no manual setup needed!     ║
+    ╚═══════════════════════════════════════════════════════════════════════╝
+    -->
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet MarkerCluster JS -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    
+    <!-- Leaflet Heatmap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <style>
+        @font-face {
+            font-family: 'DripOctober';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/DripOctober-vm0JA%5B1%5D.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Chainsaw Carnage';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/ChainsawCarnage%5B1%5D.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Halloween';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/SuperCursed.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'CrotahItalic';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/CrotahFreeVersionItalic-z8Ev3.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Dangernight';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/Dangernight-vnZ5y.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'HeavyJack';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/HeavyJack-DYz7R.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Marlita';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/MarlitaDemo-2vXRK.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'MockBear';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/MockBear-3lgA8.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Mulinarstamp';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/MulinarstampRegularDemo-q2V9d.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'UnderThreat';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/UnderThreatDemo-vnVD4.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'BlackDahlia';
+            src: url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/BlackDahlia-LBRG.woff2') format('woff2'),
+                 url('https://cdn.jsdelivr.net/gh/Rolandelving/krptcedtn@main/BlackDahlia-LBRG_1_.woff') format('woff');
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DripOctober', 'Segoe UI', sans-serif;
+            background: radial-gradient(ellipse at top, #0a0e27, #000000),
+                        radial-gradient(ellipse at bottom, #1a1a3e, #000000);
+            color: #e0e7ff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Theme Variables */
+        :root {
+            --primary: #6495ff;
+            --secondary: #9d7dff;
+            --accent: #00d9ff;
+        }
+
+        body.theme-nebula {
+            --primary: #6495ff;
+            --secondary: #9d7dff;
+            --accent: #00d9ff;
+        }
+
+        body.theme-aurora {
+            --primary: #00ff88;
+            --secondary: #00ffff;
+            --accent: #88ff00;
+        }
+
+        body.theme-supernova {
+            --primary: #ff6b35;
+            --secondary: #ff0055;
+            --accent: #ffaa00;
+        }
+
+        body.theme-galaxy {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+        }
+
+        body.theme-creme {
+            --primary: #d4a574;
+            --secondary: #c9a581;
+            --accent: #f9f5f0;
+        }
+
+        body.theme-void {
+            --primary: #1a1a1a;
+            --secondary: #4a4a4a;
+            --accent: #ffffff;
+        }
+
+        body.theme-plasma {
+            --primary: #ff00ff;
+            --secondary: #00ffff;
+            --accent: #ffff00;
+        }
+
+        body.theme-solar {
+            --primary: #ffaa00;
+            --secondary: #ff6600;
+            --accent: #ffdd00;
+        }
+
+        body.theme-lunar {
+            --primary: #c0c0c0;
+            --secondary: #e0e0e0;
+            --accent: #ffffff;
+        }
+
+        body.theme-cosmic {
+            --primary: #ff1493;
+            --secondary: #00bfff;
+            --accent: #7fff00;
+        }
+
+        /* Starfield Background */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+            animation: twinkle linear infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 1000;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(30px);
+            border-bottom: 2px solid var(--primary);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            text-shadow: 0 0 30px var(--primary);
+        }
+
+        .header-right {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .debug-console-btn {
+            padding: 0.75rem;
+            background: rgba(255, 0, 255, 0.1);
+            border: 2px solid #ff00ff;
+            color: #ff00ff;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .debug-console-btn:hover {
+            background: #ff00ff;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #ff00ff;
+        }
+
+        .back-btn {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px var(--primary);
+        }
+
+        .theme-toggle-btn {
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: rotate(45deg) scale(1.1);
+        }
+
+        /* Theme Panel */
+        .theme-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: rgba(10, 14, 39, 0.98);
+            backdrop-filter: blur(40px);
+            border-left: 2px solid var(--primary);
+            box-shadow: -10px 0 50px rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .theme-panel.active {
+            right: 0;
+        }
+
+        .theme-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .theme-panel-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .theme-close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .theme-close-btn:hover {
+            background: rgba(255, 0, 0, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .theme-section {
+            margin-bottom: 2rem;
+        }
+
+        .theme-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .theme-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 30px currentColor;
+        }
+
+        .theme-btn.active {
+            border-color: #ffffff;
+            box-shadow: 0 0 40px currentColor, 0 0 20px #ffffff;
+            transform: scale(1.15);
+        }
+
+        .theme-nebula-btn { background: linear-gradient(135deg, #6495ff, #9d7dff, #00d9ff); }
+        .theme-aurora-btn { background: linear-gradient(135deg, #00ff88, #00ffff, #88ff00); }
+        .theme-supernova-btn { background: linear-gradient(135deg, #ff6b35, #ff0055, #ffaa00); }
+        .theme-galaxy-btn { background: linear-gradient(135deg, #667eea, #764ba2, #f093fb); }
+        .theme-creme-btn { background: linear-gradient(135deg, #f9f5f0, #f1e9dc, #d4a574); }
+        .theme-void-btn { background: linear-gradient(135deg, #1a1a1a, #4a4a4a, #ffffff); }
+        .theme-plasma-btn { background: linear-gradient(135deg, #ff00ff, #00ffff, #ffff00); }
+        .theme-solar-btn { background: linear-gradient(135deg, #ffaa00, #ff6600, #ffdd00); }
+        .theme-lunar-btn { background: linear-gradient(135deg, #c0c0c0, #e0e0e0, #ffffff); }
+        .theme-cosmic-btn { background: linear-gradient(135deg, #ff1493, #00bfff, #7fff00); }
+
+        .theme-name {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 0.5rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .theme-dropdown {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'DripOctober', sans-serif;
+        }
+
+        .theme-dropdown:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .theme-dropdown:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .theme-dropdown option {
+            background: #1a1a1a;
+            color: white;
+            padding: 0.5rem;
+        }
+
+        /* Main Content */
+        .container {
+            position: relative;
+            z-index: 10;
+            padding: 2rem;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { filter: drop-shadow(0 0 20px var(--primary)); }
+            50% { filter: drop-shadow(0 0 40px var(--primary)); }
+        }
+
+        .page-subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(10, 14, 39, 0.8);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px var(--primary);
+            border-color: var(--accent);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Map Container */
+        .map-wrapper {
+            background: rgba(10, 14, 39, 0.8);
+            border: 2px solid var(--primary);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            margin-bottom: 2rem;
+        }
+
+        .map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .map-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-family: 'DripOctober', sans-serif;
+        }
+
+        .control-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px var(--primary);
+        }
+
+        .control-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        #map {
+            width: 100%;
+            height: 600px;
+            border-radius: 12px;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 30px var(--primary);
+        }
+
+        /* Country List */
+        .country-list-wrapper {
+            background: rgba(10, 14, 39, 0.8);
+            border: 2px solid var(--primary);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .country-list-header {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .country-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .country-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .country-item:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .country-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .country-stats {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--primary);
+            font-size: 1.2rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            #map {
+                height: 400px;
+            }
+
+            .theme-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .country-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== DEBUG PASSWORD MODAL ===== */
+        .debug-password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 20000;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s;
+        }
+
+        .debug-password-modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .debug-password-content {
+            background: rgba(10, 14, 39, 0.98);
+            border: 3px solid #ff00ff;
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(255, 0, 255, 0.7);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .debug-password-title {
+            color: #ff00ff;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-align: center;
+            text-shadow: 0 0 20px #ff00ff;
+        }
+
+        .debug-password-desc {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .debug-password-input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 0, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+            font-family: 'DripOctober', sans-serif;
+        }
+
+        .debug-password-input:focus {
+            outline: none;
+            border-color: #ff00ff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+
+        .debug-password-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .debug-password-btn {
+            flex: 1;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'DripOctober', sans-serif;
+        }
+
+        .debug-password-submit {
+            background: #ff00ff;
+            color: white;
+        }
+
+        .debug-password-submit:hover {
+            background: #ff00ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 0, 255, 0.6);
+        }
+
+        .debug-password-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .debug-password-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .debug-password-error {
+            color: #ff0055;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 0.5rem;
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* ===== VISUAL CONSOLE WINDOW ===== */
+        .visual-console {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50vh;
+            background: rgba(0, 0, 0, 0.98);
+            border-top: 3px solid #ff00ff;
+            display: none;
+            flex-direction: column;
+            z-index: 15000;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 -10px 50px rgba(255, 0, 255, 0.5);
+        }
+
+        .visual-console.active {
+            display: flex;
+        }
+
+        .visual-console.minimized {
+            height: 50px;
+        }
+
+        .console-header {
+            background: rgba(255, 0, 255, 0.1);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ff00ff;
+            cursor: move;
+            user-select: none;
+        }
+
+        .console-title {
+            color: #ff00ff;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .console-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .console-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .console-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .console-btn.danger {
+            background: rgba(255, 0, 85, 0.3);
+        }
+
+        .console-btn.danger:hover {
+            background: rgba(255, 0, 85, 0.5);
+        }
+
+        .console-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .visual-console.minimized .console-output {
+            display: none;
+        }
+
+        .console-log {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-left: 3px solid transparent;
+            border-radius: 3px;
+            word-wrap: break-word;
+        }
+
+        .console-log.log {
+            color: #e0e7ff;
+            border-left-color: #6495ff;
+        }
+
+        .console-log.info {
+            color: #00d9ff;
+            border-left-color: #00d9ff;
+        }
+
+        .console-log.warn {
+            color: #ffaa00;
+            border-left-color: #ffaa00;
+            background: rgba(255, 170, 0, 0.05);
+        }
+
+        .console-log.error {
+            color: #ff0055;
+            border-left-color: #ff0055;
+            background: rgba(255, 0, 85, 0.05);
+        }
+
+        .console-log.success {
+            color: #00ff88;
+            border-left-color: #00ff88;
+        }
+
+        .console-timestamp {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+        }
+
+        .console-input-area {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.75rem 1rem;
+            border-top: 2px solid rgba(255, 0, 255, 0.3);
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .visual-console.minimized .console-input-area {
+            display: none;
+        }
+
+        .console-prompt {
+            color: #ff00ff;
+            font-weight: 700;
+            user-select: none;
+        }
+
+        .console-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .console-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .console-examples {
+            padding: 1rem;
+            background: rgba(255, 0, 255, 0.05);
+            border-top: 2px solid rgba(255, 0, 255, 0.3);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .visual-console.minimized .console-examples {
+            display: none;
+        }
+
+        .examples-title {
+            color: #ff00ff;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .example-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+            border-left: 3px solid #ff00ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-item:hover {
+            background: rgba(255, 0, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .example-code {
+            color: #00d9ff;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .example-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+        }
+
+        /* Scrollbar for console */
+        .console-output::-webkit-scrollbar,
+        .console-examples::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .console-output::-webkit-scrollbar-track,
+        .console-examples::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .console-output::-webkit-scrollbar-thumb,
+        .console-examples::-webkit-scrollbar-thumb {
+            background: #ff00ff;
+            border-radius: 4px;
+        }
+
+        .console-output::-webkit-scrollbar-thumb:hover,
+        .console-examples::-webkit-scrollbar-thumb:hover {
+            background: #ff00ff;
+        }
+
+        @media (max-width: 768px) {
+            .visual-console {
+                height: 60vh;
+            }
+
+            .console-examples {
+                max-height: 150px;
+            }
+        }
+
+        /* Leaflet Popup Customization */
+        .leaflet-popup-content-wrapper {
+            background: rgba(10, 14, 39, 0.95) !important;
+            color: #e0e7ff !important;
+            border: 2px solid var(--primary) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(20px) !important;
+        }
+
+        .leaflet-popup-content {
+            margin: 1rem !important;
+            font-family: 'DripOctober', sans-serif !important;
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(10, 14, 39, 0.95) !important;
+        }
+
+        .popup-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .popup-info {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .popup-info strong {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body class="theme-nebula">
+    <!-- Starfield -->
+    <div class="starfield" id="starfield"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">🌍 GEOLOCATION MAP</div>
+        <div class="header-right">
+            <button class="debug-console-btn" id="debugConsoleBtn" title="Debug Console">🔍</button>
+            <button class="theme-toggle-btn" id="themeToggle" title="Change Theme">⚙️</button>
+            <a href="index.html" class="back-btn">
+                <span>←</span>
+                <span>Back to Home</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Theme Panel -->
+    <div class="theme-panel" id="themePanel">
+        <div class="theme-panel-header">
+            <div class="theme-panel-title">Cosmic Themes</div>
+            <button class="theme-close-btn" id="themeClose">×</button>
+        </div>
+
+        <div class="theme-section">
+            <span class="theme-label">Select Your Theme</span>
+            <div class="theme-grid">
+                <div>
+                    <button class="theme-btn theme-nebula-btn active" data-theme="theme-nebula"></button>
+                    <div class="theme-name">Nebula</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-aurora-btn" data-theme="theme-aurora"></button>
+                    <div class="theme-name">Aurora</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-supernova-btn" data-theme="theme-supernova"></button>
+                    <div class="theme-name">Supernova</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-galaxy-btn" data-theme="theme-galaxy"></button>
+                    <div class="theme-name">Galaxy</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-creme-btn" data-theme="theme-creme"></button>
+                    <div class="theme-name">Creme</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-void-btn" data-theme="theme-void"></button>
+                    <div class="theme-name">Void</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-plasma-btn" data-theme="theme-plasma"></button>
+                    <div class="theme-name">Plasma</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-solar-btn" data-theme="theme-solar"></button>
+                    <div class="theme-name">Solar</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-lunar-btn" data-theme="theme-lunar"></button>
+                    <div class="theme-name">Lunar</div>
+                </div>
+                <div>
+                    <button class="theme-btn theme-cosmic-btn" data-theme="theme-cosmic"></button>
+                    <div class="theme-name">Cosmic</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="theme-section">
+            <span class="theme-label">Font Style</span>
+            <select class="theme-dropdown" id="fontSelector">
+                <option value="DripOctober">Drip October</option>
+                <option value="Chainsaw Carnage">Chainsaw Carnage</option>
+                <option value="Halloween">Halloween</option>
+                <option value="CrotahItalic">Crotah Italic</option>
+                <option value="Dangernight">Dangernight</option>
+                <option value="HeavyJack">Heavy Jack</option>
+                <option value="Marlita">Marlita</option>
+                <option value="MockBear">Mock Bear</option>
+                <option value="Mulinarstamp">Mulinarstamp</option>
+                <option value="UnderThreat">Under Threat</option>
+                <option value="BlackDahlia">Black Dahlia</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1 class="page-title">Visitor Geolocation Tracker</h1>
+        <p class="page-subtitle">Real-time visualization of global visitor locations</p>
+
+        <!-- Quick Fix Alert -->
+        <div id="rlsAlert" style="
+            background: rgba(255, 149, 0, 0.1);
+            border: 2px solid #ff9500;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: none;
+        ">
+            <div style="display: flex; align-items: start; gap: 1rem;">
+                <div style="font-size: 2rem;">⚠️</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff9500; margin-bottom: 0.5rem;">
+                        🔒 Database Access Issue Detected
+                    </div>
+                    <div style="color: rgba(255,255,255,0.8); margin-bottom: 1rem;">
+                        Your Supabase table needs Row Level Security (RLS) policies enabled for public read access.
+                    </div>
+                    <details style="margin-bottom: 1rem;">
+                        <summary style="cursor: pointer; color: var(--accent); font-weight: 600; margin-bottom: 0.5rem;">
+                            📋 Show SQL Fix (Click to expand)
+                        </summary>
+                        <div style="margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.5); border-radius: 10px; font-family: monospace; font-size: 0.9rem; overflow-x: auto;">
+                            <div style="color: #00ff88; margin-bottom: 0.5rem;">-- Run this in Supabase SQL Editor:</div>
+                            <div style="color: #e0e7ff;">
+-- Step 1: Enable RLS on the table<br>
+ALTER TABLE visitor_geolocation ENABLE ROW LEVEL SECURITY;<br><br>
+
+-- Step 2: Create policy to allow public reads<br>
+CREATE POLICY "Allow public read access" ON visitor_geolocation<br>
+FOR SELECT USING (true);<br><br>
+
+-- Step 3: Verify the policy was created<br>
+SELECT * FROM pg_policies WHERE tablename = 'visitor_geolocation';
+                            </div>
+                        </div>
+                    </details>
+                    <button onclick="document.getElementById('rlsAlert').style.display='none'" style="
+                        padding: 0.5rem 1.5rem;
+                        background: var(--primary);
+                        border: none;
+                        color: white;
+                        border-radius: 50px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-family: 'DripOctober', sans-serif;
+                    ">Dismiss</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalVisitors">0</div>
+                <div class="stat-label">Total Visitors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="uniqueCountries">0</div>
+                <div class="stat-label">Countries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="uniqueCities">0</div>
+                <div class="stat-label">Cities</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="recentVisitors">0</div>
+                <div class="stat-label">Last 24 Hours</div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-wrapper">
+            <div class="map-header">
+                <div class="map-title">🗺️ Interactive Visitor Map</div>
+                <div class="map-controls">
+                    <button class="control-btn" id="refreshBtn">🔄 Refresh Data</button>
+                    <button class="control-btn" id="clusterToggle">📍 Toggle Clustering</button>
+                    <button class="control-btn" id="heatmapToggle">🔥 Heatmap View</button>
+                </div>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <!-- Country List -->
+        <div class="country-list-wrapper">
+            <div class="country-list-header">📊 Visitors by Country</div>
+            <div class="country-list" id="countryList">
+                <div class="loading">Loading country data...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Password Modal -->
+    <div class="debug-password-modal" id="debugPasswordModal">
+        <div class="debug-password-content">
+            <div class="debug-password-title">🔐 Debug Console Access</div>
+            <div class="debug-password-desc">
+                This advanced debugging console is password-protected. Enter the correct password to unlock full console access and developer tools.
+            </div>
+            <input 
+                type="password" 
+                id="debugPasswordInput" 
+                class="debug-password-input" 
+                placeholder="Enter master password..."
+                autocomplete="off"
+            />
+            <div id="debugPasswordError"></div>
+            <div class="debug-password-buttons">
+                <button class="debug-password-btn debug-password-cancel" id="debugPasswordCancel">Cancel</button>
+                <button class="debug-password-btn debug-password-submit" id="debugPasswordSubmit">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Console Window -->
+    <div class="visual-console" id="visualConsole">
+        <div class="console-header" id="consoleHeader">
+            <div class="console-title">
+                <span>🔥</span>
+                <span>Debug Console</span>
+                <span id="consoleStatus" style="font-size: 0.75rem; color: rgba(255,255,255,0.5);"></span>
+            </div>
+            <div class="console-controls">
+                <button class="console-btn" id="consoleMinimize">_</button>
+                <button class="console-btn" id="consoleClear">Clear</button>
+                <button class="console-btn danger" id="consoleClose">×</button>
+            </div>
+        </div>
+        
+        <div class="console-output" id="consoleOutput">
+            <div class="console-log success">
+                <span class="console-timestamp">[00:00:00]</span>
+                <strong>🎉 Debug Console Initialized</strong> - All console methods intercepted
+            </div>
+        </div>
+        
+        <div class="console-input-area">
+            <span class="console-prompt">&gt;</span>
+            <input 
+                type="text" 
+                class="console-input" 
+                id="consoleInput" 
+                placeholder="Enter JavaScript command... (Press Enter to execute)"
+                autocomplete="off"
+            />
+        </div>
+        
+        <div class="console-examples">
+            <div class="examples-title">💡 Quick Commands (Click to use):</div>
+            
+            <div class="example-item" data-command="console.clear = function() {};">
+                <div class="example-code">console.clear = function() {};</div>
+                <div class="example-desc">Disable console clearing (prevents external scripts from clearing)</div>
+            </div>
+            
+            <div class="example-item" data-command="Object.defineProperty(console, 'log', { writable: false });">
+                <div class="example-code">Object.defineProperty(console, 'log', { writable: false });</div>
+                <div class="example-desc">Make console.log immutable (cannot be overridden)</div>
+            </div>
+            
+            <div class="example-item" data-command="document.addEventListener('contextmenu', e => e.stopImmediatePropagation(), true);">
+                <div class="example-code">document.addEventListener('contextmenu', e => e.stopImmediatePropagation(), true);</div>
+                <div class="example-desc">Force enable right-click (bypasses blockers)</div>
+            </div>
+            
+            <div class="example-item" data-command="debugger;">
+                <div class="example-code">debugger;</div>
+                <div class="example-desc">Trigger breakpoint (pauses execution if DevTools open)</div>
+            </div>
+            
+            <div class="example-item" data-command="localStorage">
+                <div class="example-code">localStorage</div>
+                <div class="example-desc">View all localStorage data</div>
+            </div>
+            
+            <div class="example-item" data-command="sessionStorage">
+                <div class="example-code">sessionStorage</div>
+                <div class="example-desc">View all sessionStorage data</div>
+            </div>
+            
+            <div class="example-item" data-command="document.cookie">
+                <div class="example-code">document.cookie</div>
+                <div class="example-desc">View all cookies</div>
+            </div>
+            
+            <div class="example-item" data-command="window.location.reload(true);">
+                <div class="example-code">window.location.reload(true);</div>
+                <div class="example-desc">Hard reload page (clears cache)</div>
+            </div>
+            
+            <div class="example-item" data-command="performance.now()">
+                <div class="example-code">performance.now()</div>
+                <div class="example-desc">Get high-precision timestamp (milliseconds since page load)</div>
+            </div>
+            
+            <div class="example-item" data-command="navigator.userAgent">
+                <div class="example-code">navigator.userAgent</div>
+                <div class="example-desc">View browser user agent string</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+        ╔═══════════════════════════════════════════════════════════════════════════════════╗
+        ║                         🔥 DEBUG CONSOLE SYSTEM v2.0                              ║
+        ╠═══════════════════════════════════════════════════════════════════════════════════╣
+        ║                                                                                    ║
+        ║  PASSWORD PROTECTION:                                                             ║
+        ║  • Password stored in Supabase 'debug_config' table                               ║
+        ║  • Click 🔍 button to enter password                                              ║
+        ║  • Once authenticated, session persists until page refresh                        ║
+        ║                                                                                    ║
+        ║  FEATURES:                                                                         ║
+        ║  ✅ Visual Console Window - Mirrors all console output                            ║
+        ║  ✅ Command Execution - Run JavaScript directly in the page                       ║
+        ║  ✅ Command History - Press ↑/↓ to navigate previous commands                     ║
+        ║  ✅ Quick Examples - Click to insert useful commands                              ║
+        ║  ✅ DevTools Unlock - Enables F12, Ctrl+Shift+I, right-click, etc.               ║
+        ║  ✅ Console Interception - All console.log/warn/error appear in visual console    ║
+        ║  ✅ Draggable - Drag console header to reposition                                 ║
+        ║  ✅ Minimizable - Click _ to minimize                                             ║
+        ║                                                                                    ║
+        ║  PROTECTION (Before Authentication):                                              ║
+        ║  🔒 Right-click disabled                                                          ║
+        ║  🔒 F12 and DevTools shortcuts blocked                                            ║
+        ║  🔒 Text selection disabled                                                        ║
+        ║  🔒 Copy/paste disabled                                                            ║
+        ║                                                                                    ║
+        ║  EXAMPLE COMMANDS:                                                                 ║
+        ║  • console.clear = function() {}; - Prevent external console clearing             ║
+        ║  • debugger; - Trigger breakpoint                                                 ║
+        ║  • localStorage / sessionStorage / document.cookie - View storage                 ║
+        ║  • Object.defineProperty(console, 'log', {writable:false}) - Protect console      ║
+        ║                                                                                    ║
+        ║  DATABASE SETUP:                                                                   ║
+        ║  Run this SQL in Supabase to set the password:                                    ║
+        ║                                                                                    ║
+        ║  CREATE TABLE IF NOT EXISTS debug_config (                                        ║
+        ║    setting_name VARCHAR(50) PRIMARY KEY,                                          ║
+        ║    setting_value TEXT NOT NULL                                                    ║
+        ║  );                                                                                ║
+        ║                                                                                    ║
+        ║  INSERT INTO debug_config (setting_name, setting_value)                           ║
+        ║  VALUES ('debug_password', 'your_secure_password_here')                           ║
+        ║  ON CONFLICT (setting_name) DO UPDATE SET setting_value = EXCLUDED.setting_value; ║
+        ║                                                                                    ║
+        ╚═══════════════════════════════════════════════════════════════════════════════════╝
+        */
+        
+        // ===== CONFIGURATION =====
+        const SUPABASE_URL = 'https://zkrdbvjmessktzlxommr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprcmRidmptZXNza3R6bHhvbW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODMzNzUsImV4cCI6MjA2ODQ1OTM3NX0.XDNQGD7Jl-2zmjFyfGVFRjdq-9rVFfhCyExfO8Fzb7Q';
+
+        let supabase;
+        let map;
+        let markerClusterGroup;
+        let heatmapLayer = null;
+        let markers = [];
+        let visitorData = [];
+        let clusteringEnabled = true;
+        let heatmapEnabled = false;
+
+        // ===== INITIALIZE SUPABASE =====
+        function initSupabase() {
+            try {
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('✅ Supabase initialized');
+                    return true;
+                }
+            } catch (error) {
+                console.error('❌ Supabase initialization failed:', error);
+            }
+            return false;
+        }
+
+        // ===== STARFIELD BACKGROUND =====
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            starfield.innerHTML = '';
+            
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                const size = Math.random() * 3;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                star.style.animationDelay = (Math.random() * 2) + 's';
+                
+                starfield.appendChild(star);
+            }
+        }
+
+        // ===== THEME SYSTEM =====
+        function initThemeSystem() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themePanel = document.getElementById('themePanel');
+            const themeClose = document.getElementById('themeClose');
+            const themeButtons = document.querySelectorAll('.theme-btn');
+            const fontSelector = document.getElementById('fontSelector');
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('kripticTheme') || 'theme-nebula';
+            document.body.className = savedTheme;
+            
+            themeButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.theme === savedTheme) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Load saved font
+            const savedFont = localStorage.getItem('kripticFont') || 'DripOctober';
+            document.body.style.fontFamily = `'${savedFont}', 'Segoe UI', sans-serif`;
+            if (fontSelector) fontSelector.value = savedFont;
+
+            // Try to load from Supabase
+            loadThemeFromSupabase();
+
+            // Theme panel toggle
+            themeToggle.addEventListener('click', () => {
+                themePanel.classList.add('active');
+            });
+
+            themeClose.addEventListener('click', () => {
+                themePanel.classList.remove('active');
+            });
+
+            // Theme selection
+            themeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const theme = btn.dataset.theme;
+                    document.body.className = theme;
+                    
+                    themeButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Save to localStorage (instant)
+                    localStorage.setItem('kripticTheme', theme);
+                    
+                    // Save to Supabase (async)
+                    saveThemeToSupabase(theme);
+                });
+            });
+
+            // Font selection
+            if (fontSelector) {
+                fontSelector.addEventListener('change', (e) => {
+                    const selectedFont = e.target.value;
+                    document.body.style.fontFamily = `'${selectedFont}', 'Segoe UI', sans-serif`;
+                    
+                    // Save to localStorage (instant)
+                    localStorage.setItem('kripticFont', selectedFont);
+                    
+                    // Save to Supabase (async)
+                    saveFontToSupabase(selectedFont);
+                });
+            }
+
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (!themePanel.contains(e.target) && !themeToggle.contains(e.target)) {
+                    themePanel.classList.remove('active');
+                }
+            });
+        }
+
+        async function saveThemeToSupabase(theme) {
+            try {
+                if (!supabase) return;
+                
+                const userId = getUserId();
+                
+                const { error } = await supabase
+                    .from('user_preferences')
+                    .upsert({
+                        user_id: userId,
+                        theme: theme,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id'
+                    });
+                
+                if (!error) {
+                    console.log('✅ Theme saved to Supabase:', theme);
+                }
+            } catch (err) {
+                console.warn('Supabase theme save error:', err);
+            }
+        }
+
+        async function saveFontToSupabase(font) {
+            try {
+                if (!supabase) return;
+                
+                const userId = getUserId();
+                
+                const { error } = await supabase
+                    .from('user_preferences')
+                    .upsert({
+                        user_id: userId,
+                        font: font,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id'
+                    });
+                
+                if (!error) {
+                    console.log('✅ Font saved to Supabase:', font);
+                }
+            } catch (err) {
+                console.warn('Supabase font save error:', err);
+            }
+        }
+
+        async function loadThemeFromSupabase() {
+            try {
+                if (!supabase) return;
+                
+                const userId = getUserId();
+                
+                const { data, error } = await supabase
+                    .from('user_preferences')
+                    .select('theme, font')
+                    .eq('user_id', userId)
+                    .single();
+                
+                if (data) {
+                    // Load theme
+                    if (data.theme) {
+                        document.body.className = data.theme;
+                        localStorage.setItem('kripticTheme', data.theme);
+                        
+                        // Update active button
+                        document.querySelectorAll('.theme-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                            if (btn.dataset.theme === data.theme) {
+                                btn.classList.add('active');
+                            }
+                        });
+                        
+                        console.log('✅ Theme loaded from Supabase:', data.theme);
+                    }
+                    
+                    // Load font
+                    if (data.font) {
+                        document.body.style.fontFamily = `'${data.font}', 'Segoe UI', sans-serif`;
+                        localStorage.setItem('kripticFont', data.font);
+                        
+                        const fontSelector = document.getElementById('fontSelector');
+                        if (fontSelector) fontSelector.value = data.font;
+                        
+                        console.log('✅ Font loaded from Supabase:', data.font);
+                    }
+                }
+            } catch (err) {
+                console.warn('Supabase theme/font load error:', err);
+            }
+        }
+
+        function getUserId() {
+            let userId = sessionStorage.getItem('userId');
+            if (!userId) {
+                userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('userId', userId);
+            }
+            return userId;
+        }
+
+        // ===== DEBUG CONSOLE SYSTEM (LIGHTWEIGHT) =====
+        
+        let debugPassword = null;
+
+        // Fetch debug password from Supabase
+        async function fetchDebugPassword() {
+            try {
+                const { data, error } = await supabase
+                    .from('debug_config')
+                    .select('setting_value')
+                    .eq('setting_name', 'debug_password')
+                    .single();
+
+                if (error) {
+                    console.error('Failed to fetch debug password:', error);
+                    return null;
+                }
+
+                return data?.setting_value || null;
+            } catch (error) {
+                console.error('Error fetching debug password:', error);
+                return null;
+            }
+        }
+
+        // Show password modal
+        function showDebugPasswordModal() {
+            const modal = document.getElementById('debugPasswordModal');
+            const input = document.getElementById('debugPasswordInput');
+            const errorDiv = document.getElementById('debugPasswordError');
+            
+            modal.classList.add('active');
+            errorDiv.innerHTML = '';
+            input.value = '';
+            
+            setTimeout(() => input.focus(), 100);
+        }
+
+        // Close password modal
+        function closeDebugPasswordModal() {
+            document.getElementById('debugPasswordModal').classList.remove('active');
+        }
+
+        // Verify debug password and load console
+        async function verifyDebugPassword() {
+            const input = document.getElementById('debugPasswordInput');
+            const errorDiv = document.getElementById('debugPasswordError');
+            const enteredPassword = input.value;
+
+            errorDiv.innerHTML = '<div style="color: #00d9ff; font-size: 0.9rem;">🔄 Verifying...</div>';
+
+            if (!debugPassword) {
+                debugPassword = await fetchDebugPassword();
+            }
+
+            if (!debugPassword) {
+                errorDiv.innerHTML = '<div class="debug-password-error">❌ Failed to load password from database</div>';
+                return;
+            }
+
+            if (enteredPassword === debugPassword) {
+                errorDiv.innerHTML = '<div style="color: #00ff88; font-size: 0.9rem;">✅ Access granted! Loading console...</div>';
+                
+                sessionStorage.setItem('debugAuthenticated', 'true');
+                
+                // Dynamically load the debug console script
+                loadDebugConsoleScript();
+                
+                setTimeout(closeDebugPasswordModal, 500);
+            } else {
+                errorDiv.innerHTML = '<div class="debug-password-error">❌ Incorrect password. Try again.</div>';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // Dynamically load debug console script
+        function loadDebugConsoleScript() {
+            console.log('📦 Loading debug console module...');
+            
+            const script = document.createElement('script');
+            script.src = 'debug-console.js';
+            script.onload = () => {
+                console.log('✅ Debug console module loaded');
+                // Initialize the debug console
+                if (window.DebugConsole && typeof window.DebugConsole.init === 'function') {
+                    window.DebugConsole.init();
+                }
+            };
+            script.onerror = () => {
+                console.error('❌ Failed to load debug-console.js');
+                alert('Failed to load debug console. Make sure debug-console.js is in the same folder.');
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        // Initialize debug console UI (lightweight)
+        function initDebugConsoleUI() {
+            const debugBtn = document.getElementById('debugConsoleBtn');
+            const passwordModal = document.getElementById('debugPasswordModal');
+            const passwordInput = document.getElementById('debugPasswordInput');
+            const passwordSubmit = document.getElementById('debugPasswordSubmit');
+            const passwordCancel = document.getElementById('debugPasswordCancel');
+            
+            // Check if already authenticated
+            const isAuthenticated = sessionStorage.getItem('debugAuthenticated') === 'true';
+            
+            // Debug button click
+            debugBtn.addEventListener('click', () => {
+                if (isAuthenticated) {
+                    // Console already loaded, just open it
+                    if (window.DebugConsole && window.DebugConsole.open) {
+                        window.DebugConsole.open();
+                    } else {
+                        // Need to reload the script
+                        loadDebugConsoleScript();
+                    }
+                } else {
+                    showDebugPasswordModal();
+                }
+            });
+            
+            // Password submit
+            passwordSubmit.addEventListener('click', verifyDebugPassword);
+            passwordCancel.addEventListener('click', closeDebugPasswordModal);
+            
+            // Password input enter key
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') verifyDebugPassword();
+            });
+            
+            // Close modal on outside click
+            passwordModal.addEventListener('click', (e) => {
+                if (e.target === passwordModal) closeDebugPasswordModal();
+            });
+            
+            // Auto-load console if already authenticated
+            if (isAuthenticated) {
+                loadDebugConsoleScript();
+            }
+        }
+
+        // Protection functions (stored globally so debug console can remove them)
+        window.__preventContextMenu = function(e) {
+            if (!sessionStorage.getItem('debugAuthenticated')) {
+                e.preventDefault();
+                return false;
+            }
+        };
+
+        window.__preventDevToolsShortcuts = function(e) {
+            if (!sessionStorage.getItem('debugAuthenticated')) {
+                if (e.keyCode === 123 || 
+                    (e.ctrlKey && e.shiftKey && e.keyCode === 73) || 
+                    (e.ctrlKey && e.shiftKey && e.keyCode === 74) || 
+                    (e.ctrlKey && e.shiftKey && e.keyCode === 67) || 
+                    (e.ctrlKey && e.keyCode === 85)) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        };
+
+        window.__preventSelection = function(e) {
+            if (!sessionStorage.getItem('debugAuthenticated')) {
+                e.preventDefault();
+                return false;
+            }
+        };
+
+        window.__preventCopy = function(e) {
+            if (!sessionStorage.getItem('debugAuthenticated')) {
+                e.preventDefault();
+                return false;
+            }
+        };
+
+        // Apply protection before authentication
+        function applyProtection() {
+            if (sessionStorage.getItem('debugAuthenticated') === 'true') {
+                return; // Already authenticated, don't apply protection
+            }
+            
+            document.addEventListener('contextmenu', window.__preventContextMenu);
+            document.addEventListener('keydown', window.__preventDevToolsShortcuts);
+            document.addEventListener('selectstart', window.__preventSelection);
+            document.addEventListener('copy', window.__preventCopy);
+            
+            document.body.style.userSelect = 'none';
+            document.body.style.webkitUserSelect = 'none';
+        }
+
+        // ===== MAP INITIALIZATION =====
+        function initMap() {
+            console.log('🗺️ Initializing map...');
+            
+            map = L.map('map', {
+                center: [20, 0],
+                zoom: 2,
+                minZoom: 2,
+                maxZoom: 18,
+                worldCopyJump: true
+            });
+
+            // Dark theme tile layer
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            // Initialize marker cluster group
+            markerClusterGroup = L.markerClusterGroup({
+                chunkedLoading: true,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    let size = 'small';
+                    if (count > 10) size = 'medium';
+                    if (count > 50) size = 'large';
+                    
+                    return L.divIcon({
+                        html: '<div style="background: rgba(100, 149, 255, 0.8); color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #00d9ff; box-shadow: 0 0 20px rgba(100, 149, 255, 0.6);">' + count + '</div>',
+                        className: 'marker-cluster marker-cluster-' + size,
+                        iconSize: L.point(40, 40)
+                    });
+                }
+            });
+
+            map.addLayer(markerClusterGroup);
+            
+            console.log('✅ Map initialized');
+        }
+
+        // ===== FETCH VISITOR DATA =====
+        async function fetchVisitorData() {
+            try {
+                console.log('📥 Fetching visitor data from Supabase...');
+                console.log('🔗 Supabase URL:', SUPABASE_URL);
+
+                const { data, error, status, statusText } = await supabase
+                    .from('visitor_geolocation')
+                    .select('*')
+                    .order('visited_at', { ascending: false })
+                    .limit(1000);
+
+                console.log('📊 Query response:', { data, error, status, statusText });
+
+                if (error) {
+                    console.error('❌ Supabase fetch error:', error);
+                    console.error('Error details:', {
+                        message: error.message,
+                        code: error.code,
+                        details: error.details,
+                        hint: error.hint
+                    });
+                    
+                    // Show user-friendly error
+                    showError(`Database Error: ${error.message}`, error.hint);
+                    throw error;
+                }
+
+                if (!data || data.length === 0) {
+                    console.warn('⚠️ No visitor data found in database');
+                    console.warn('This could mean:');
+                    console.warn('1. The table is empty');
+                    console.warn('2. Row Level Security (RLS) is blocking reads');
+                    console.warn('3. The table name is incorrect');
+                    
+                    // Show RLS alert
+                    const rlsAlert = document.getElementById('rlsAlert');
+                    if (rlsAlert) rlsAlert.style.display = 'block';
+                    
+                    showError(
+                        '📭 No Visitor Data Found', 
+                        'If you have data in the database, scroll up to see the SQL fix for Row Level Security.'
+                    );
+                    
+                    visitorData = [];
+                    updateStats();
+                    updateCountryList();
+                    return;
+                }
+
+                console.log(`✅ Successfully fetched ${data.length} visitor records`);
+                visitorData = data;
+                
+                updateStats();
+                addMarkersToMap();
+                updateCountryList();
+                
+                // Create heatmap data (but don't show it yet)
+                createHeatmap();
+
+                // Hide any error messages
+                const errorDiv = document.getElementById('errorMessage');
+                if (errorDiv) errorDiv.remove();
+                
+                // Hide RLS alert if data loaded successfully
+                const rlsAlert = document.getElementById('rlsAlert');
+                if (rlsAlert) rlsAlert.style.display = 'none';
+
+            } catch (error) {
+                console.error('❌ Failed to fetch visitor data:', error);
+                showError('Failed to load visitor data', 'Check browser console for details (F12)');
+            }
+        }
+
+        function showError(title, message) {
+            // Remove existing error if present
+            const existingError = document.getElementById('errorMessage');
+            if (existingError) existingError.remove();
+
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'errorMessage';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(255, 0, 85, 0.95);
+                border: 3px solid #ff6b6b;
+                border-radius: 20px;
+                padding: 2rem;
+                z-index: 10001;
+                max-width: 500px;
+                text-align: center;
+                box-shadow: 0 20px 60px rgba(255, 0, 85, 0.5);
+                backdrop-filter: blur(20px);
+            `;
+
+            errorDiv.innerHTML = `
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: white;">${title}</div>
+                <div style="font-size: 1rem; color: rgba(255,255,255,0.9); margin-bottom: 1.5rem;">${message}</div>
+                <button onclick="document.getElementById('errorMessage').remove()" style="
+                    padding: 0.75rem 2rem;
+                    background: white;
+                    color: #ff0055;
+                    border: none;
+                    border-radius: 50px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    font-size: 1rem;
+                    font-family: 'DripOctober', sans-serif;
+                ">Close</button>
+            `;
+
+            document.body.appendChild(errorDiv);
+        }
+
+        // ===== UPDATE STATISTICS =====
+        function updateStats() {
+            const total = visitorData.length;
+            
+            const uniqueCountries = new Set(visitorData.map(v => v.country).filter(Boolean)).size;
+            const uniqueCities = new Set(visitorData.map(v => v.city).filter(Boolean)).size;
+            
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const recent = visitorData.filter(v => new Date(v.visited_at) > oneDayAgo).length;
+
+            document.getElementById('totalVisitors').textContent = total;
+            document.getElementById('uniqueCountries').textContent = uniqueCountries;
+            document.getElementById('uniqueCities').textContent = uniqueCities;
+            document.getElementById('recentVisitors').textContent = recent;
+        }
+
+        // ===== ADD MARKERS TO MAP =====
+        function addMarkersToMap() {
+            console.log('📍 Adding markers to map...');
+            
+            // Clear existing markers
+            markerClusterGroup.clearLayers();
+            markers = [];
+
+            visitorData.forEach(visitor => {
+                if (visitor.latitude && visitor.longitude) {
+                    const marker = L.marker([visitor.latitude, visitor.longitude], {
+                        icon: L.divIcon({
+                            className: 'custom-marker',
+                            html: '<div style="background: #6495ff; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #00d9ff; box-shadow: 0 0 10px rgba(100, 149, 255, 0.8);"></div>',
+                            iconSize: [12, 12]
+                        })
+                    });
+
+                    const popupContent = `
+                        <div class="popup-title">📍 ${visitor.city || 'Unknown'}, ${visitor.country || 'Unknown'}</div>
+                        <div class="popup-info">
+                            <strong>Country:</strong> ${visitor.country || 'Unknown'} (${visitor.country_code || 'XX'})<br>
+                            <strong>Region:</strong> ${visitor.region || 'Unknown'}<br>
+                            <strong>Timezone:</strong> ${visitor.timezone || 'Unknown'}<br>
+                            <strong>ISP:</strong> ${(visitor.isp || 'Unknown').substring(0, 50)}<br>
+                            <strong>Visited:</strong> ${new Date(visitor.visited_at).toLocaleString()}<br>
+                            <strong>Resolution:</strong> ${visitor.screen_resolution || 'Unknown'}<br>
+                            <strong>Language:</strong> ${visitor.language || 'Unknown'}
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    markers.push(marker);
+                    markerClusterGroup.addLayer(marker);
+                }
+            });
+
+            console.log(`✅ Added ${markers.length} markers to map`);
+        }
+
+        // ===== CREATE HEATMAP =====
+        function createHeatmap() {
+            console.log('🔥 Creating heatmap...');
+            
+            // Remove existing heatmap
+            if (heatmapLayer) {
+                map.removeLayer(heatmapLayer);
+            }
+
+            // Create heatmap data array
+            const heatmapData = visitorData
+                .filter(v => v.latitude && v.longitude)
+                .map(v => [v.latitude, v.longitude, 1]); // [lat, lng, intensity]
+
+            if (heatmapData.length === 0) {
+                console.warn('⚠️ No data for heatmap');
+                return;
+            }
+
+            // Create heatmap layer with custom styling
+            heatmapLayer = L.heatLayer(heatmapData, {
+                radius: 25,
+                blur: 35,
+                maxZoom: 10,
+                max: 1.0,
+                gradient: {
+                    0.0: '#0d0d2b',
+                    0.2: '#6495ff',
+                    0.4: '#9d7dff',
+                    0.6: '#00d9ff',
+                    0.8: '#00ff88',
+                    1.0: '#ffaa00'
+                }
+            });
+
+            console.log(`✅ Heatmap created with ${heatmapData.length} points`);
+        }
+
+        // ===== TOGGLE HEATMAP =====
+        function toggleHeatmap(enabled) {
+            if (enabled) {
+                // Hide markers, show heatmap
+                markerClusterGroup.clearLayers();
+                if (!heatmapLayer) {
+                    createHeatmap();
+                }
+                if (heatmapLayer) {
+                    heatmapLayer.addTo(map);
+                }
+                console.log('🔥 Heatmap view enabled');
+            } else {
+                // Hide heatmap, show markers
+                if (heatmapLayer) {
+                    map.removeLayer(heatmapLayer);
+                }
+                markerClusterGroup.addLayers(markers);
+                console.log('📍 Marker view enabled');
+            }
+        }
+
+        // ===== UPDATE COUNTRY LIST =====
+        function updateCountryList() {
+            const countryStats = {};
+            
+            visitorData.forEach(visitor => {
+                const country = visitor.country || 'Unknown';
+                const countryCode = visitor.country_code || 'XX';
+                
+                if (!countryStats[country]) {
+                    countryStats[country] = {
+                        count: 0,
+                        code: countryCode,
+                        cities: new Set()
+                    };
+                }
+                
+                countryStats[country].count++;
+                if (visitor.city) {
+                    countryStats[country].cities.add(visitor.city);
+                }
+            });
+
+            const sortedCountries = Object.entries(countryStats)
+                .sort((a, b) => b[1].count - a[1].count);
+
+            const countryListEl = document.getElementById('countryList');
+            
+            if (sortedCountries.length === 0) {
+                countryListEl.innerHTML = '<div class="loading">No country data available</div>';
+                return;
+            }
+
+            countryListEl.innerHTML = sortedCountries.map(([country, stats]) => `
+                <div class="country-item" onclick="focusCountry('${country}')">
+                    <div class="country-name">${getFlagEmoji(stats.code)} ${country}</div>
+                    <div class="country-stats">
+                        ${stats.count} visitor${stats.count !== 1 ? 's' : ''} • 
+                        ${stats.cities.size} ${stats.cities.size === 1 ? 'city' : 'cities'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getFlagEmoji(countryCode) {
+            if (!countryCode || countryCode === 'XX') return '🌍';
+            const codePoints = countryCode
+                .toUpperCase()
+                .split('')
+                .map(char => 127397 + char.charCodeAt());
+            return String.fromCodePoint(...codePoints);
+        }
+
+        function focusCountry(countryName) {
+            const countryVisitors = visitorData.filter(v => v.country === countryName);
+            
+            if (countryVisitors.length === 0) return;
+
+            const latitudes = countryVisitors.map(v => v.latitude).filter(Boolean);
+            const longitudes = countryVisitors.map(v => v.longitude).filter(Boolean);
+
+            if (latitudes.length === 0 || longitudes.length === 0) return;
+
+            const avgLat = latitudes.reduce((a, b) => a + b) / latitudes.length;
+            const avgLng = longitudes.reduce((a, b) => a + b) / longitudes.length;
+
+            map.setView([avgLat, avgLng], 5, {
+                animate: true,
+                duration: 1
+            });
+        }
+
+        // ===== CONTROLS =====
+        function initControls() {
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                fetchVisitorData();
+            });
+
+            // Cluster toggle
+            document.getElementById('clusterToggle').addEventListener('click', (e) => {
+                if (heatmapEnabled) {
+                    // Can't toggle clustering in heatmap mode
+                    return;
+                }
+                
+                clusteringEnabled = !clusteringEnabled;
+                
+                if (clusteringEnabled) {
+                    markerClusterGroup.clearLayers();
+                    markerClusterGroup.addLayers(markers);
+                    e.target.classList.remove('active');
+                    console.log('📍 Clustering enabled');
+                } else {
+                    markerClusterGroup.clearLayers();
+                    markers.forEach(marker => marker.addTo(map));
+                    e.target.classList.add('active');
+                    console.log('📍 Clustering disabled - showing all markers');
+                }
+            });
+
+            // Heatmap toggle
+            document.getElementById('heatmapToggle').addEventListener('click', (e) => {
+                heatmapEnabled = !heatmapEnabled;
+                
+                if (heatmapEnabled) {
+                    toggleHeatmap(true);
+                    e.target.classList.add('active');
+                    e.target.textContent = '📍 Show Markers';
+                } else {
+                    toggleHeatmap(false);
+                    e.target.classList.remove('active');
+                    e.target.textContent = '🔥 Heatmap View';
+                    
+                    // Restore clustering state
+                    if (clusteringEnabled) {
+                        markerClusterGroup.clearLayers();
+                        markerClusterGroup.addLayers(markers);
+                    }
+                }
+            });
+        }
+
+        // ===== INITIALIZE EVERYTHING =====
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Geolocation Visualizer Loading...');
+            
+            createStarfield();
+            initThemeSystem();
+            
+            // Apply protection if not authenticated
+            applyProtection();
+            
+            // Initialize debug console UI (lightweight)
+            initDebugConsoleUI();
+
+            // Initialize Supabase
+            if (!initSupabase()) {
+                console.error('❌ Failed to initialize Supabase');
+                alert('Failed to connect to database. Please refresh the page.');
+                return;
+            }
+
+            // Small delay to ensure Leaflet is loaded
+            setTimeout(() => {
+                initMap();
+                initControls();
+                
+                // Fetch data
+                fetchVisitorData();
+
+                // Auto-refresh every 30 seconds
+                setInterval(() => {
+                    console.log('🔄 Auto-refreshing data...');
+                    fetchVisitorData();
+                }, 30000);
+            }, 100);
+
+            console.log('✅ Geolocation Visualizer Ready!');
+        });
+    </script>
+</body>
+</html>
